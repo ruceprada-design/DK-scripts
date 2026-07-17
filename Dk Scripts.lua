@@ -10,6 +10,7 @@ local HttpService = game:GetService("HttpService")
 local allowedDevelopers = {
 	"THEMYSTICALONE_DJ", 
 	"Daspeed321",
+	"JJDA_ONE",
 }
 
 local isDev = false
@@ -46,7 +47,7 @@ title.Name = "Title"
 title.Size = UDim2.new(1, -40, 0, 50)
 title.Position = UDim2.new(0, 40, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "DK-SCRIPTS (Beta)"
+title.Text = "DK-SCRIPTS (v1.1)" -- Updated to version v1.1
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
@@ -261,7 +262,7 @@ RunService.RenderStepped:Connect(updateOverlay)
 
 
 -- ==========================================
--- EXCLUSIVE DEV UI (CONSOLE) - DEFINED EARLY
+-- EXCLUSIVE DEV UI (CONSOLE)
 -- ==========================================
 local consoleMain = Instance.new("Frame")
 consoleMain.Name = "DevConsole"
@@ -287,6 +288,8 @@ savedList.Position = UDim2.new(0, 20, 0, 10)
 savedList.BackgroundTransparency = 1
 savedList.ScrollBarThickness = 4
 savedList.ScrollBarImageColor3 = Color3.fromRGB(255, 180, 0)
+savedList.AutomaticCanvasSize = Enum.AutomaticSize.Y 
+savedList.CanvasSize = UDim2.new(0, 0, 0, 0)
 savedList.Parent = consoleStartPage
 
 -- ==========================================
@@ -298,7 +301,7 @@ local function CheckForSupportedGame()
 		if child:IsA("Frame") and child:FindFirstChild("IdLabel") then
 			local savedId = string.gsub(child.IdLabel.Text, "Game ID: ", "")
 			if savedId == currentId then
-				return child:GetAttribute("SavedScript") -- Returns the script code if matched
+				return child:GetAttribute("SavedScript")
 			end
 		end
 	end
@@ -313,7 +316,6 @@ local function showGameDetected()
 
 	gamePage:ClearAllChildren()
 	
-	-- CHECK GAME MATCH
 	local foundScript = CheckForSupportedGame()
 
 	local label = Instance.new("TextLabel")
@@ -326,10 +328,10 @@ local function showGameDetected()
 	
 	if foundScript then
 		label.Text = "Game Supported!"
-		label.TextColor3 = Color3.fromRGB(0, 255, 100) -- Green text
+		label.TextColor3 = Color3.fromRGB(0, 255, 100)
 	else
 		label.Text = "Game Not Supported!"
-		label.TextColor3 = Color3.fromRGB(255, 100, 100) -- Red text
+		label.TextColor3 = Color3.fromRGB(255, 100, 100)
 	end
 	
 	label.Parent = gamePage
@@ -352,11 +354,10 @@ local function showGameDetected()
 	execCorner.CornerRadius = UDim.new(0, 8)
 	execCorner.Parent = executeBtn
 	
-	-- EXECUTE LOGIC
 	executeBtn.Activated:Connect(function()
 		if foundScript and foundScript ~= "" then
 			local success, err = pcall(function()
-				loadstring(foundScript)() -- This actually runs the code!
+				loadstring(foundScript)()
 			end)
 			if not success then
 				warn("Error executing script: " .. tostring(err))
@@ -726,11 +727,9 @@ local function CreateScriptCard(t, id, scriptCode)
 	delBtn.Activated:Connect(function()
 		scriptCard:Destroy()
 		SaveData() 
-		savedList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 20)
 	end)
 
 	scriptCard.Parent = savedList
-	savedList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 20)
 end
 
 -- Dev Console Toggle Animation
@@ -770,10 +769,6 @@ discardBtn.Activated:Connect(function()
 	addScriptPage.Visible = false
 	consoleStartPage.Visible = true
 	consoleBackBtn.Visible = false
-end)
-
-listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	savedList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 20)
 end)
 
 saveBtn.Activated:Connect(function()
