@@ -5,20 +5,26 @@ local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService") 
 
 -- ==========================================
+-- CLOUD SAVE CREDENTIALS
+-- ==========================================
+local BIN_ID = "6a5a2d41da38895dfe6aed03"
+local API_KEY = "$2a$10$I2M8tTxCkGSEj6ZXLzEp1.8hIKCwOYigbE5NFC4QqqiTLkNj5.MJO"
+
+-- ==========================================
 -- DEVELOPER ALLOWLIST
 -- ==========================================
 local allowedDevelopers = {
-	"THEMYSTICALONE_DJ", 
-	"Daspeed321",
-	"JJDA_ONE",
+    "THEMYSTICALONE_DJ", 
+    "Daspeed321",
+    "JJDA_ONE",
 }
 
 local isDev = false
 for _, devName in pairs(allowedDevelopers) do
-	if player.Name == devName then
-		isDev = true
-		break
-	end
+    if player.Name == devName then
+        isDev = true
+        break
+    end
 end
 -- isDev = true -- Uncomment this line ONLY if testing in Roblox Studio!
 
@@ -47,7 +53,7 @@ title.Name = "Title"
 title.Size = UDim2.new(1, -40, 0, 50)
 title.Position = UDim2.new(0, 40, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "DK-SCRIPTS (v1.1)" -- Updated to version v1.1
+title.Text = "DK-SCRIPTS v1.1"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
@@ -226,37 +232,37 @@ local showPing = false
 local fpsValue = 0
 
 task.spawn(function()
-	while true do
-		fpsValue = 0
-		local start = tick()
-		while tick() - start < 1 do
-			fpsValue += 1
-			RunService.RenderStepped:Wait()
-		end
-	end
+    while true do
+        fpsValue = 0
+        local start = tick()
+        while tick() - start < 1 do
+            fpsValue += 1
+            RunService.RenderStepped:Wait()
+        end
+    end
 end)
 
 fpsBtn.Activated:Connect(function()
-	showFPS = not showFPS
-	fpsBtn.Text = "Show FPS: " .. (showFPS and "ON" or "OFF")
-	overlay.Visible = showFPS or showPing
+    showFPS = not showFPS
+    fpsBtn.Text = "Show FPS: " .. (showFPS and "ON" or "OFF")
+    overlay.Visible = showFPS or showPing
 end)
 
 pingBtn.Activated:Connect(function()
-	showPing = not showPing
-	pingBtn.Text = "Show Ping: " .. (showPing and "ON" or "OFF")
-	overlay.Visible = showFPS or showPing
+    showPing = not showPing
+    pingBtn.Text = "Show Ping: " .. (showPing and "ON" or "OFF")
+    overlay.Visible = showFPS or showPing
 end)
 
 local function updateOverlay()
-	local parts = {}
-	if showFPS then
-		table.insert(parts, "FPS: " .. tostring(fpsValue))
-	end
-	if showPing then
-		table.insert(parts, "Ping: " .. tostring(math.floor((player:GetNetworkPing() or 0) * 1000)))
-	end
-	overlay.Text = table.concat(parts, "  ")
+    local parts = {}
+    if showFPS then
+        table.insert(parts, "FPS: " .. tostring(fpsValue))
+    end
+    if showPing then
+        table.insert(parts, "Ping: " .. tostring(math.floor((player:GetNetworkPing() or 0) * 1000)))
+    end
+    overlay.Text = table.concat(parts, "  ")
 end
 RunService.RenderStepped:Connect(updateOverlay)
 
@@ -296,140 +302,140 @@ savedList.Parent = consoleStartPage
 -- GAME DETECTION LOGIC
 -- ==========================================
 local function CheckForSupportedGame()
-	local currentId = tostring(game.PlaceId)
-	for _, child in pairs(savedList:GetChildren()) do
-		if child:IsA("Frame") and child:FindFirstChild("IdLabel") then
-			local savedId = string.gsub(child.IdLabel.Text, "Game ID: ", "")
-			if savedId == currentId then
-				return child:GetAttribute("SavedScript")
-			end
-		end
-	end
-	return nil
+    local currentId = tostring(game.PlaceId)
+    for _, child in pairs(savedList:GetChildren()) do
+        if child:IsA("Frame") and child:FindFirstChild("IdLabel") then
+            local savedId = string.gsub(child.IdLabel.Text, "Game ID: ", "")
+            if savedId == currentId then
+                return child:GetAttribute("SavedScript")
+            end
+        end
+    end
+    return nil
 end
 
 local function showGameDetected()
-	startPage.Visible = false
-	settingsPage.Visible = false
-	gamePage.Visible = true
-	backBtn.Visible = true
+    startPage.Visible = false
+    settingsPage.Visible = false
+    gamePage.Visible = true
+    backBtn.Visible = true
 
-	gamePage:ClearAllChildren()
-	
-	local foundScript = CheckForSupportedGame()
+    gamePage:ClearAllChildren()
+    
+    local foundScript = CheckForSupportedGame()
 
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(0, 260, 0, 40)
-	label.Position = UDim2.new(0.5, -130, 0, 20)
-	label.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-	label.BorderSizePixel = 0
-	label.TextScaled = true
-	label.Font = Enum.Font.GothamBold
-	
-	if foundScript then
-		label.Text = "Game Supported!"
-		label.TextColor3 = Color3.fromRGB(0, 255, 100)
-	else
-		label.Text = "Game Not Supported!"
-		label.TextColor3 = Color3.fromRGB(255, 100, 100)
-	end
-	
-	label.Parent = gamePage
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, 8)
-	c.Parent = label
-	
-	local executeBtn = Instance.new("TextButton")
-	executeBtn.Name = "ExecuteButton"
-	executeBtn.Size = UDim2.new(0, 260, 0, 40)
-	executeBtn.Position = UDim2.new(0.5, -130, 0, 70)
-	executeBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-	executeBtn.BorderSizePixel = 0
-	executeBtn.Text = "EXECUTE"
-	executeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	executeBtn.TextScaled = true
-	executeBtn.Font = Enum.Font.GothamBold
-	executeBtn.Parent = gamePage
-	local execCorner = Instance.new("UICorner")
-	execCorner.CornerRadius = UDim.new(0, 8)
-	execCorner.Parent = executeBtn
-	
-	executeBtn.Activated:Connect(function()
-		if foundScript and foundScript ~= "" then
-			local success, err = pcall(function()
-				loadstring(foundScript)()
-			end)
-			if not success then
-				warn("Error executing script: " .. tostring(err))
-				executeBtn.Text = "Execution Error"
-				task.wait(2)
-				executeBtn.Text = "EXECUTE"
-			end
-		else
-			executeBtn.Text = "No Script Found"
-			task.wait(2)
-			executeBtn.Text = "EXECUTE"
-		end
-	end)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0, 260, 0, 40)
+    label.Position = UDim2.new(0.5, -130, 0, 20)
+    label.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    label.BorderSizePixel = 0
+    label.TextScaled = true
+    label.Font = Enum.Font.GothamBold
+    
+    if foundScript then
+        label.Text = "Game Supported!"
+        label.TextColor3 = Color3.fromRGB(0, 255, 100)
+    else
+        label.Text = "Game Not Supported!"
+        label.TextColor3 = Color3.fromRGB(255, 100, 100)
+    end
+    
+    label.Parent = gamePage
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 8)
+    c.Parent = label
+    
+    local executeBtn = Instance.new("TextButton")
+    executeBtn.Name = "ExecuteButton"
+    executeBtn.Size = UDim2.new(0, 260, 0, 40)
+    executeBtn.Position = UDim2.new(0.5, -130, 0, 70)
+    executeBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    executeBtn.BorderSizePixel = 0
+    executeBtn.Text = "EXECUTE"
+    executeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    executeBtn.TextScaled = true
+    executeBtn.Font = Enum.Font.GothamBold
+    executeBtn.Parent = gamePage
+    local execCorner = Instance.new("UICorner")
+    execCorner.CornerRadius = UDim.new(0, 8)
+    execCorner.Parent = executeBtn
+    
+    executeBtn.Activated:Connect(function()
+        if foundScript and foundScript ~= "" then
+            local success, err = pcall(function()
+                loadstring(foundScript)()
+            end)
+            if not success then
+                warn("Error executing script: " .. tostring(err))
+                executeBtn.Text = "Execution Error"
+                task.wait(2)
+                executeBtn.Text = "EXECUTE"
+            end
+        else
+            executeBtn.Text = "No Script Found"
+            task.wait(2)
+            executeBtn.Text = "EXECUTE"
+        end
+    end)
 
-	local discordBtn = Instance.new("TextButton")
-	discordBtn.Name = "DiscordButton"
-	discordBtn.Size = UDim2.new(0, 260, 0, 40)
-	discordBtn.Position = UDim2.new(0.5, -130, 0, 120)
-	discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
-	discordBtn.BorderSizePixel = 0
-	discordBtn.Text = "Join Discord"
-	discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	discordBtn.TextSize = 18
-	discordBtn.Font = Enum.Font.GothamBold
-	discordBtn.Parent = gamePage
-	local discordCorner = Instance.new("UICorner")
-	discordCorner.CornerRadius = UDim.new(0, 8)
-	discordCorner.Parent = discordBtn
+    local discordBtn = Instance.new("TextButton")
+    discordBtn.Name = "DiscordButton"
+    discordBtn.Size = UDim2.new(0, 260, 0, 40)
+    discordBtn.Position = UDim2.new(0.5, -130, 0, 120)
+    discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+    discordBtn.BorderSizePixel = 0
+    discordBtn.Text = "Join Discord"
+    discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    discordBtn.TextSize = 18
+    discordBtn.Font = Enum.Font.GothamBold
+    discordBtn.Parent = gamePage
+    local discordCorner = Instance.new("UICorner")
+    discordCorner.CornerRadius = UDim.new(0, 8)
+    discordCorner.Parent = discordBtn
 end
 
 settingsBtn.Activated:Connect(function()
-	startPage.Visible = false
-	settingsPage.Visible = true
-	backBtn.Visible = true
+    startPage.Visible = false
+    settingsPage.Visible = true
+    backBtn.Visible = true
 end)
 
 backBtn.Activated:Connect(function()
-	gamePage.Visible = false
-	settingsPage.Visible = false
-	startPage.Visible = true
-	backBtn.Visible = false
+    gamePage.Visible = false
+    settingsPage.Visible = false
+    startPage.Visible = true
+    backBtn.Visible = false
 end)
 
 killBtn.Activated:Connect(function()
-	gui:Destroy()
+    gui:Destroy()
 end)
 
 startBtn.Activated:Connect(function()
-	startBtn.Text = "Started"
-	task.wait(0.2)
-	startBtn.Text = "Start!"
-	showGameDetected()
+    startBtn.Text = "Started"
+    task.wait(0.2)
+    startBtn.Text = "Start!"
+    showGameDetected()
 end)
 
 local dragging, dragStart, startPos
 main.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = main.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = main.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
 end)
 UIS.InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - dragStart
-		main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
 end)
 
 
@@ -600,215 +606,230 @@ discardCorner.CornerRadius = UDim.new(0, 8)
 discardCorner.Parent = discardBtn
 
 local currentEditingCard = nil 
-local SAVE_FILE_NAME = "DKScripts_SavedData.json"
 
 -- ==========================================
--- SAVING & LOADING LOGIC
+-- SAVING & LOADING LOGIC (CLOUD SYNC)
 -- ==========================================
+-- This line grabs the correct HTTP function no matter what executor you are using
+local executorRequest = request or http_request or (syn and syn.request) or (http and http.request)
+
 local function SaveData()
-	if writefile then
-		local dataToSave = {}
-		for _, child in pairs(savedList:GetChildren()) do
-			if child:IsA("Frame") then
-				local cardTitleText = child.TitleLabel.Text
-				local cardIdText = string.gsub(child.IdLabel.Text, "Game ID: ", "")
-				local cardCodeText = child:GetAttribute("SavedScript") or ""
-				table.insert(dataToSave, {Title = cardTitleText, ID = cardIdText, Code = cardCodeText})
-			end
-		end
-		
-		local success, json = pcall(function()
-			return HttpService:JSONEncode(dataToSave)
-		end)
-		
-		if success then
-			writefile(SAVE_FILE_NAME, json)
-		else
-			warn("Failed to encode JSON data.")
-		end
-	end
+    if not executorRequest then 
+        warn("HTTP requests are not supported on your executor!") 
+        return 
+    end
+    
+    local dataToSave = {}
+    for _, child in pairs(savedList:GetChildren()) do
+        if child:IsA("Frame") and child:FindFirstChild("TitleLabel") then
+            local cardTitleText = child.TitleLabel.Text
+            local cardIdText = string.gsub(child.IdLabel.Text, "Game ID: ", "")
+            local cardCodeText = child:GetAttribute("SavedScript") or ""
+            table.insert(dataToSave, {Title = cardTitleText, ID = cardIdText, Code = cardCodeText})
+        end
+    end
+    
+    local payload = HttpService:JSONEncode({scripts = dataToSave})
+    
+    executorRequest({
+        Url = "https://api.jsonbin.io/v3/b/" .. BIN_ID,
+        Method = "PUT",
+        Headers = {
+            ["X-Master-Key"] = API_KEY, 
+            ["Content-Type"] = "application/json"
+        },
+        Body = payload
+    })
 end
 
 local function LoadData()
-	if isfile and isfile(SAVE_FILE_NAME) and readfile then
-		local success, result = pcall(function()
-			return HttpService:JSONDecode(readfile(SAVE_FILE_NAME))
-		end)
-		if success and type(result) == "table" then
-			return result
-		end
-	end
-	return nil
+    if not executorRequest then return nil end
+    
+    local success, response = pcall(function()
+        return executorRequest({
+            Url = "https://api.jsonbin.io/v3/b/" .. BIN_ID .. "/latest",
+            Method = "GET",
+            Headers = {["X-Master-Key"] = API_KEY}
+        })
+    end)
+    
+    if success and response and response.StatusCode == 200 then
+        local decoded = HttpService:JSONDecode(response.Body)
+        if decoded and decoded.record and decoded.record.scripts then
+            return decoded.record.scripts
+        end
+    end
+    return nil
 end
 
 -- ==========================================
 -- SCRIPT CARD CREATION LOGIC
 -- ==========================================
 local function CreateScriptCard(t, id, scriptCode)
-	local scriptCard = Instance.new("Frame")
-	scriptCard.Size = UDim2.new(1, -10, 0, 60)
-	scriptCard.BackgroundColor3 = Color3.fromRGB(40, 30, 15)
-	scriptCard:SetAttribute("SavedScript", scriptCode) 
-	
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
-	corner.Parent = scriptCard
+    local scriptCard = Instance.new("Frame")
+    scriptCard.Size = UDim2.new(1, -10, 0, 60)
+    scriptCard.BackgroundColor3 = Color3.fromRGB(40, 30, 15)
+    scriptCard:SetAttribute("SavedScript", scriptCode) 
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = scriptCard
 
-	local cardTitle = Instance.new("TextLabel")
-	cardTitle.Name = "TitleLabel"
-	cardTitle.Size = UDim2.new(1, -135, 0, 30) 
-	cardTitle.Position = UDim2.new(0, 10, 0, 5)
-	cardTitle.BackgroundTransparency = 1
-	cardTitle.Text = t
-	cardTitle.TextColor3 = Color3.fromRGB(255, 180, 0)
-	cardTitle.Font = Enum.Font.GothamBold
-	cardTitle.TextSize = 18
-	cardTitle.TextXAlignment = Enum.TextXAlignment.Left
-	cardTitle.Parent = scriptCard
+    local cardTitle = Instance.new("TextLabel")
+    cardTitle.Name = "TitleLabel"
+    cardTitle.Size = UDim2.new(1, -135, 0, 30) 
+    cardTitle.Position = UDim2.new(0, 10, 0, 5)
+    cardTitle.BackgroundTransparency = 1
+    cardTitle.Text = t
+    cardTitle.TextColor3 = Color3.fromRGB(255, 180, 0)
+    cardTitle.Font = Enum.Font.GothamBold
+    cardTitle.TextSize = 18
+    cardTitle.TextXAlignment = Enum.TextXAlignment.Left
+    cardTitle.Parent = scriptCard
 
-	local cardId = Instance.new("TextLabel")
-	cardId.Name = "IdLabel"
-	cardId.Size = UDim2.new(1, -135, 0, 20)
-	cardId.Position = UDim2.new(0, 10, 0, 35)
-	cardId.BackgroundTransparency = 1
-	cardId.Text = "Game ID: " .. id
-	cardId.TextColor3 = Color3.fromRGB(200, 150, 0)
-	cardId.Font = Enum.Font.Gotham
-	cardId.TextSize = 12
-	cardId.TextXAlignment = Enum.TextXAlignment.Left
-	cardId.Parent = scriptCard
-	
-	-- EDIT BUTTON
-	local editBtn = Instance.new("TextButton")
-	editBtn.Name = "EditButton"
-	editBtn.Size = UDim2.new(0, 55, 0, 40)
-	editBtn.Position = UDim2.new(1, -120, 0.5, -20)
-	editBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-	editBtn.BorderSizePixel = 0
-	editBtn.Text = "EDIT"
-	editBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	editBtn.Font = Enum.Font.GothamBold
-	editBtn.TextSize = 13
-	editBtn.Parent = scriptCard
-	
-	local editCorner = Instance.new("UICorner")
-	editCorner.CornerRadius = UDim.new(0, 6)
-	editCorner.Parent = editBtn
-	
-	-- DELETE BUTTON
-	local delBtn = Instance.new("TextButton")
-	delBtn.Name = "DeleteButton"
-	delBtn.Size = UDim2.new(0, 55, 0, 40)
-	delBtn.Position = UDim2.new(1, -60, 0.5, -20)
-	delBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-	delBtn.BorderSizePixel = 0
-	delBtn.Text = "DEL"
-	delBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	delBtn.Font = Enum.Font.GothamBold
-	delBtn.TextSize = 13
-	delBtn.Parent = scriptCard
-	
-	local delCorner = Instance.new("UICorner")
-	delCorner.CornerRadius = UDim.new(0, 6)
-	delCorner.Parent = delBtn
-	
-	-- Connections
-	editBtn.Activated:Connect(function()
-		currentEditingCard = scriptCard
-		titleBox.Text = cardTitle.Text
-		idBox.Text = string.gsub(cardId.Text, "Game ID: ", "")
-		scriptBox.Text = scriptCard:GetAttribute("SavedScript")
-		
-		consoleStartPage.Visible = false
-		addScriptPage.Visible = true
-		consoleBackBtn.Visible = true
-	end)
-	
-	delBtn.Activated:Connect(function()
-		scriptCard:Destroy()
-		SaveData() 
-	end)
+    local cardId = Instance.new("TextLabel")
+    cardId.Name = "IdLabel"
+    cardId.Size = UDim2.new(1, -135, 0, 20)
+    cardId.Position = UDim2.new(0, 10, 0, 35)
+    cardId.BackgroundTransparency = 1
+    cardId.Text = "Game ID: " .. id
+    cardId.TextColor3 = Color3.fromRGB(200, 150, 0)
+    cardId.Font = Enum.Font.Gotham
+    cardId.TextSize = 12
+    cardId.TextXAlignment = Enum.TextXAlignment.Left
+    cardId.Parent = scriptCard
+    
+    -- EDIT BUTTON
+    local editBtn = Instance.new("TextButton")
+    editBtn.Name = "EditButton"
+    editBtn.Size = UDim2.new(0, 55, 0, 40)
+    editBtn.Position = UDim2.new(1, -120, 0.5, -20)
+    editBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+    editBtn.BorderSizePixel = 0
+    editBtn.Text = "EDIT"
+    editBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    editBtn.Font = Enum.Font.GothamBold
+    editBtn.TextSize = 13
+    editBtn.Parent = scriptCard
+    
+    local editCorner = Instance.new("UICorner")
+    editCorner.CornerRadius = UDim.new(0, 6)
+    editCorner.Parent = editBtn
+    
+    -- DELETE BUTTON
+    local delBtn = Instance.new("TextButton")
+    delBtn.Name = "DeleteButton"
+    delBtn.Size = UDim2.new(0, 55, 0, 40)
+    delBtn.Position = UDim2.new(1, -60, 0.5, -20)
+    delBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+    delBtn.BorderSizePixel = 0
+    delBtn.Text = "DEL"
+    delBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    delBtn.Font = Enum.Font.GothamBold
+    delBtn.TextSize = 13
+    delBtn.Parent = scriptCard
+    
+    local delCorner = Instance.new("UICorner")
+    delCorner.CornerRadius = UDim.new(0, 6)
+    delCorner.Parent = delBtn
+    
+    -- Connections
+    editBtn.Activated:Connect(function()
+        currentEditingCard = scriptCard
+        titleBox.Text = cardTitle.Text
+        idBox.Text = string.gsub(cardId.Text, "Game ID: ", "")
+        scriptBox.Text = scriptCard:GetAttribute("SavedScript")
+        
+        consoleStartPage.Visible = false
+        addScriptPage.Visible = true
+        consoleBackBtn.Visible = true
+    end)
+    
+    delBtn.Activated:Connect(function()
+        scriptCard:Destroy()
+        SaveData() 
+    end)
 
-	scriptCard.Parent = savedList
+    scriptCard.Parent = savedList
 end
 
 -- Dev Console Toggle Animation
 local targetDevConsoleSize = UDim2.new(0, 420, 0, 320)
 
 devBtn.Activated:Connect(function()
-	if not consoleMain.Visible then
-		consoleMain.Size = UDim2.new(0, 0, 0, 0)
-		consoleMain.Visible = true
-		TweenService:Create(consoleMain, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = targetDevConsoleSize}):Play()
-	else
-		local closeTween = TweenService:Create(consoleMain, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)})
-		closeTween:Play()
-		closeTween.Completed:Wait()
-		consoleMain.Visible = false
-	end
+    if not consoleMain.Visible then
+        consoleMain.Size = UDim2.new(0, 0, 0, 0)
+        consoleMain.Visible = true
+        TweenService:Create(consoleMain, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = targetDevConsoleSize}):Play()
+    else
+        local closeTween = TweenService:Create(consoleMain, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)})
+        closeTween:Play()
+        closeTween.Completed:Wait()
+        consoleMain.Visible = false
+    end
 end)
 
 plusBtn.Activated:Connect(function()
-	currentEditingCard = nil 
-	titleBox.Text = ""
-	scriptBox.Text = ""
-	idBox.Text = ""
-	
-	consoleStartPage.Visible = false
-	addScriptPage.Visible = true
-	consoleBackBtn.Visible = true
+    currentEditingCard = nil 
+    titleBox.Text = ""
+    scriptBox.Text = ""
+    idBox.Text = ""
+    
+    consoleStartPage.Visible = false
+    addScriptPage.Visible = true
+    consoleBackBtn.Visible = true
 end)
 
 consoleBackBtn.Activated:Connect(function()
-	addScriptPage.Visible = false
-	consoleStartPage.Visible = true
-	consoleBackBtn.Visible = false
+    addScriptPage.Visible = false
+    consoleStartPage.Visible = true
+    consoleBackBtn.Visible = false
 end)
 
 discardBtn.Activated:Connect(function()
-	addScriptPage.Visible = false
-	consoleStartPage.Visible = true
-	consoleBackBtn.Visible = false
+    addScriptPage.Visible = false
+    consoleStartPage.Visible = true
+    consoleBackBtn.Visible = false
 end)
 
 saveBtn.Activated:Connect(function()
-	local t = titleBox.Text ~= "" and titleBox.Text or "Untitled Game"
-	local id = idBox.Text ~= "" and idBox.Text or "No ID"
-	local scriptCode = scriptBox.Text
+    local t = titleBox.Text ~= "" and titleBox.Text or "Untitled Game"
+    local id = idBox.Text ~= "" and idBox.Text or "No ID"
+    local scriptCode = scriptBox.Text
 
-	if currentEditingCard then
-		currentEditingCard.TitleLabel.Text = t
-		currentEditingCard.IdLabel.Text = "Game ID: " .. id
-		currentEditingCard:SetAttribute("SavedScript", scriptCode)
-	else
-		CreateScriptCard(t, id, scriptCode)
-	end
+    if currentEditingCard then
+        currentEditingCard.TitleLabel.Text = t
+        currentEditingCard.IdLabel.Text = "Game ID: " .. id
+        currentEditingCard:SetAttribute("SavedScript", scriptCode)
+    else
+        CreateScriptCard(t, id, scriptCode)
+    end
 
-	SaveData()
+    SaveData()
 
-	addScriptPage.Visible = false
-	consoleStartPage.Visible = true
-	consoleBackBtn.Visible = false
+    addScriptPage.Visible = false
+    consoleStartPage.Visible = true
+    consoleBackBtn.Visible = false
 end)
 
 local cDragging, cDragStart, cStartPos
 consoleMain.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		cDragging = true
-		cDragStart = input.Position
-		cStartPos = consoleMain.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				cDragging = false
-			end
-		end)
-	end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        cDragging = true
+        cDragStart = input.Position
+        cStartPos = consoleMain.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                cDragging = false
+            end
+        end)
+    end
 end)
 UIS.InputChanged:Connect(function(input)
-	if cDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - cDragStart
-		consoleMain.Position = UDim2.new(cStartPos.X.Scale, cStartPos.X.Offset + delta.X, cStartPos.Y.Scale, cStartPos.Y.Offset + delta.Y)
-	end
+    if cDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - cDragStart
+        consoleMain.Position = UDim2.new(cStartPos.X.Scale, cStartPos.X.Offset + delta.X, cStartPos.Y.Scale, cStartPos.Y.Offset + delta.Y)
+    end
 end)
 
 -- ==========================================
@@ -816,7 +837,7 @@ end)
 -- ==========================================
 local savedData = LoadData()
 if savedData then
-	for _, item in pairs(savedData) do
-		CreateScriptCard(item.Title, item.ID, item.Code)
-	end
+    for _, item in pairs(savedData) do
+        CreateScriptCard(item.Title, item.ID, item.Code)
+    end
 end
