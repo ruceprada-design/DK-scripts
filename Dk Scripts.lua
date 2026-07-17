@@ -15,7 +15,7 @@ local API_KEY = "$2a$10$I2M8tTxCkGSEj6ZXLzEp1.8hIKCwOYigbE5NFC4QqqiTLkNj5.MJO"
 -- ==========================================
 local allowedDevelopers = {
     "THEMYSTICALONE_DJ", 
-    "Daspeed321",
+    "DaSpeed321",
     "JJDA_ONE",
     "youreconfusedimpro",
 }
