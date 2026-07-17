@@ -17,6 +17,7 @@ local allowedDevelopers = {
     "THEMYSTICALONE_DJ", 
     "Daspeed321",
     "JJDA_ONE",
+    "youreconfusedimpro",
 }
 
 local isDev = false
