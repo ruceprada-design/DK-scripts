@@ -1,4 +1,4 @@
-local player = game.Players.LocalPlayer
+ local player = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -31,38 +31,33 @@ gui.Name = "DKScriptsGui"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
+local toggleKey = Enum.KeyCode.K -- Moved up so the notification can read it dynamically
+
 -- ==========================================
 -- AUDIO & ANIMATION HELPER FUNCTIONS
 -- ==========================================
 local function playModernSound()
     local sound = Instance.new("Sound")
-    sound.SoundId = "rbxassetid://6042053626" -- Super clean, modern UI pop
+    sound.SoundId = "rbxassetid://6042053626"
     sound.Volume = 1
     sound.Parent = game:GetService("SoundService")
     sound:Play()
-    task.delay(2, function()
-        sound:Destroy()
-    end)
+    task.delay(2, function() sound:Destroy() end)
 end
 
 local function runRealisticLoading(barFill, callback)
     barFill.Size = UDim2.new(0, 0, 1, 0)
     
-    -- Stage 1: Fast surge to 40%
     local t1 = TweenService:Create(barFill, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0.4, 0, 1, 0)})
     t1:Play()
     
     t1.Completed:Connect(function()
-        task.wait(0.5) -- Realistic Freeze point
-        
-        -- Stage 2: Slow crawl from 40% to 65%
+        task.wait(0.5)
         local t2 = TweenService:Create(barFill, TweenInfo.new(1.4, Enum.EasingStyle.Linear), {Size = UDim2.new(0.65, 0, 1, 0)})
         t2:Play()
         
         t2.Completed:Connect(function()
-            task.wait(0.2) -- Micro-stutter
-            
-            -- Stage 3: High-speed completion blast to 100%
+            task.wait(0.2)
             local t3 = TweenService:Create(barFill, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(1, 0, 1, 0)})
             t3:Play()
             
@@ -74,15 +69,12 @@ local function runRealisticLoading(barFill, callback)
     end)
 end
 
--- ==========================================
--- DRAGGING FUNCTION (OPTIMIZED)
--- ==========================================
 local function makeDraggable(frame)
     local dragging = false
     local dragStart, startPos
 
     frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
@@ -90,7 +82,7 @@ local function makeDraggable(frame)
     end)
 
     UIS.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
             frame.Position = UDim2.new(
                 startPos.X.Scale, startPos.X.Offset + delta.X,
@@ -100,23 +92,86 @@ local function makeDraggable(frame)
     end)
 
     UIS.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = false
         end
     end)
 end
 
 -- ==========================================
--- PATCH NOTES POPUP (NEW!)
+-- CUSTOM PURPLE CLOSE NOTIFICATION
+-- ==========================================
+local notifFrame = Instance.new("Frame", gui)
+notifFrame.Name = "CloseNotification"
+notifFrame.Size = UDim2.new(0, 280, 0, 70)
+notifFrame.Position = UDim2.new(1, 50, 0.7, 0)
+notifFrame.BackgroundColor3 = Color3.fromRGB(35, 15, 55) 
+notifFrame.BorderSizePixel = 0
+notifFrame.ZIndex = 100
+Instance.new("UICorner", notifFrame).CornerRadius = UDim.new(0, 8)
+
+local notifStroke = Instance.new("UIStroke", notifFrame)
+notifStroke.Color = Color3.fromRGB(180, 100, 255) 
+notifStroke.Thickness = 2
+
+local notifText = Instance.new("TextLabel", notifFrame)
+notifText.Size = UDim2.new(1, -20, 1, 0)
+notifText.Position = UDim2.new(0, 10, 0, 0)
+notifText.BackgroundTransparency = 1
+notifText.TextColor3 = Color3.fromRGB(230, 200, 255)
+notifText.Font = Enum.Font.GothamBold
+notifText.TextSize = 13
+notifText.TextWrapped = true
+notifText.ZIndex = 101
+
+local isNotifShowing = false
+local function showCloseNotification()
+    if isNotifShowing then return end
+    isNotifShowing = true
+    
+    notifText.Text = "Press " .. toggleKey.Name .. " to open Or tap the menu button to open up the lua again."
+    
+    local slideIn = TweenService:Create(notifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1, -300, 0.7, 0)})
+    slideIn:Play()
+    
+    task.delay(4, function()
+        local slideOut = TweenService:Create(notifFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Position = UDim2.new(1, 50, 0.7, 0)})
+        slideOut:Play()
+        slideOut.Completed:Connect(function()
+            isNotifShowing = false
+        end)
+    end)
+end
+
+-- ==========================================
+-- MOBILE MOD MENU TOGGLE 
+-- ==========================================
+local dkToggle = Instance.new("TextButton")
+dkToggle.Name = "DKToggleButton"
+dkToggle.Size = UDim2.new(0, 50, 0, 50)
+dkToggle.Position = UDim2.new(0, 20, 0.5, -25)
+dkToggle.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+dkToggle.Text = "DK"
+dkToggle.TextColor3 = Color3.fromRGB(180, 100, 255)
+dkToggle.Font = Enum.Font.GothamBold
+dkToggle.TextSize = 22
+dkToggle.Visible = false
+dkToggle.ZIndex = 50
+dkToggle.Parent = gui
+Instance.new("UICorner", dkToggle).CornerRadius = UDim.new(1, 0)
+makeDraggable(dkToggle)
+
+-- ==========================================
+-- PATCH NOTES POPUP
 -- ==========================================
 local patchNotes = Instance.new("Frame")
 patchNotes.Name = "PatchNotesPopup"
 patchNotes.Size = UDim2.new(0, 320, 0, 240)
-patchNotes.Position = UDim2.new(0.5, -160, 0.5, -120)
-patchNotes.BackgroundColor3 = Color3.fromRGB(30, 25, 35) -- Dark sleek with a hint of purple
+patchNotes.Position = UDim2.new(0.5, 20, 0.5, -120) 
+patchNotes.BackgroundColor3 = Color3.fromRGB(30, 25, 35)
 patchNotes.BorderSizePixel = 0
 patchNotes.ZIndex = 50
-patchNotes.Visible = false -- Hidden until loading is done
+patchNotes.Visible = false
 patchNotes.Parent = gui
 
 local patchCorner = Instance.new("UICorner")
@@ -124,13 +179,13 @@ patchCorner.CornerRadius = UDim.new(0, 12)
 patchCorner.Parent = patchNotes
 
 local patchTitle = Instance.new("TextLabel", patchNotes)
-patchTitle.Size = UDim2.new(1, 0, 0, 45)
-patchTitle.Position = UDim2.new(0, 0, 0, 5)
+patchTitle.Size = UDim2.new(1, -40, 0, 45)
+patchTitle.Position = UDim2.new(0, 20, 0, 5)
 patchTitle.BackgroundTransparency = 1
-patchTitle.Text = "✨ UPDATE PATCH NOTES ✨"
-patchTitle.TextColor3 = Color3.fromRGB(180, 100, 255) -- Vivid Purple
+patchTitle.Text = "[ UPDATE PATCH NOTES ]"
+patchTitle.TextColor3 = Color3.fromRGB(180, 100, 255)
 patchTitle.Font = Enum.Font.GothamBold
-patchTitle.TextSize = 18
+patchTitle.TextScaled = true
 patchTitle.ZIndex = 51
 
 local patchCloseBtn = Instance.new("TextButton", patchNotes)
@@ -148,10 +203,11 @@ local patchBody = Instance.new("TextLabel", patchNotes)
 patchBody.Size = UDim2.new(1, -30, 1, -60)
 patchBody.Position = UDim2.new(0, 15, 0, 50)
 patchBody.BackgroundTransparency = 1
-patchBody.Text = "• Added Developer Activity Status panel!\n\n• New dev network dots (Green/Blue/Red)\n\n• Upgraded Realistic Loading Animations\n\n• Integrated sleek Modern UI Audio cues\n\n• Fixed layout overlapping & stacking bugs\n\n• Restored Execute & Discord integration"
-patchBody.TextColor3 = Color3.fromRGB(215, 175, 255) -- Soft readable purple
-patchBody.Font = Enum.Font.Gotham
+patchBody.Text = "- Mod Menu Toggle (Black DK Circle)!\n\n- Custom Keybinds to toggle UI\n\n- Top-Left 'X' close button added\n\n- Animated Dev Console Startup\n\n- Auto-hides UI after executing script\n\n- Developer Status Network active!"
+patchBody.TextColor3 = Color3.fromRGB(215, 175, 255)
+patchBody.Font = Enum.Font.GothamBold
 patchBody.TextSize = 13
+patchBody.TextWrapped = true
 patchBody.TextXAlignment = Enum.TextXAlignment.Left
 patchBody.TextYAlignment = Enum.TextYAlignment.Top
 patchBody.ZIndex = 51
@@ -167,7 +223,7 @@ makeDraggable(patchNotes)
 local main = Instance.new("Frame")
 main.Name = "Main"
 main.Size = UDim2.new(0, 340, 0, 280)
-main.Position = UDim2.new(0.5, -170, 0.5, -140)
+main.Position = UDim2.new(0.5, -340, 0.5, -140) 
 main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 main.BorderSizePixel = 0
 main.Visible = false
@@ -176,24 +232,40 @@ main.Parent = gui
 local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 12)
 mainCorner.Parent = main
-
 makeDraggable(main)
+
+-- TOP LEFT X BUTTON
+local closeMainBtn = Instance.new("TextButton", main)
+closeMainBtn.Size = UDim2.new(0, 32, 0, 32)
+closeMainBtn.Position = UDim2.new(0, 8, 0, 9)
+closeMainBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+closeMainBtn.Text = "X"
+closeMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeMainBtn.Font = Enum.Font.GothamBold
+closeMainBtn.TextSize = 14
+Instance.new("UICorner", closeMainBtn).CornerRadius = UDim.new(0, 8)
+
+closeMainBtn.Activated:Connect(function()
+    main.Visible = false
+    patchNotes.Visible = false
+    dkToggle.Visible = true
+    showCloseNotification() 
+end)
+
+dkToggle.Activated:Connect(function()
+    main.Visible = true
+    dkToggle.Visible = false
+end)
 
 -- LOADING SCREEN
 local loadingScreen = Instance.new("Frame")
-loadingScreen.Name = "LoadingScreen"
 loadingScreen.Size = UDim2.new(0, 340, 0, 280)
-loadingScreen.Position = UDim2.new(0.5, -170, 0.5, -140)
+loadingScreen.Position = UDim2.new(0.5, -170, 0.5, -140) 
 loadingScreen.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-loadingScreen.BorderSizePixel = 0
 loadingScreen.Parent = gui
+Instance.new("UICorner", loadingScreen).CornerRadius = UDim.new(0, 12)
 
-local loadingCorner = Instance.new("UICorner")
-loadingCorner.CornerRadius = UDim.new(0, 12)
-loadingCorner.Parent = loadingScreen
-
-local loadingTitle = Instance.new("TextLabel")
-loadingTitle.Name = "LoadingTitle"
+local loadingTitle = Instance.new("TextLabel", loadingScreen)
 loadingTitle.Size = UDim2.new(1, 0, 0, 50)
 loadingTitle.Position = UDim2.new(0, 0, 0, 80)
 loadingTitle.BackgroundTransparency = 1
@@ -201,33 +273,20 @@ loadingTitle.Text = "Loading DK-SCRIPTS..."
 loadingTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 loadingTitle.TextScaled = true
 loadingTitle.Font = Enum.Font.GothamBold
-loadingTitle.Parent = loadingScreen
 
-local barBg = Instance.new("Frame")
-barBg.Name = "BarBackground"
+local barBg = Instance.new("Frame", loadingScreen)
 barBg.Size = UDim2.new(0, 260, 0, 16)
 barBg.Position = UDim2.new(0.5, -130, 0.5, 30)
 barBg.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-barBg.BorderSizePixel = 0
-barBg.Parent = loadingScreen
+Instance.new("UICorner", barBg).CornerRadius = UDim.new(1, 0)
 
-local barBgCorner = Instance.new("UICorner")
-barBgCorner.CornerRadius = UDim.new(1, 0)
-barBgCorner.Parent = barBg
-
-local barFill = Instance.new("Frame")
-barFill.Name = "BarFill"
+local barFill = Instance.new("Frame", barBg)
 barFill.Size = UDim2.new(0, 0, 1, 0)
 barFill.BackgroundColor3 = Color3.fromRGB(0, 170, 90)
-barFill.BorderSizePixel = 0
-barFill.Parent = barBg
-
-local barFillCorner = Instance.new("UICorner")
-barFillCorner.CornerRadius = UDim.new(1, 0)
-barFillCorner.Parent = barFill
+Instance.new("UICorner", barFill).CornerRadius = UDim.new(1, 0)
 
 runRealisticLoading(barFill, function()
-    local fadeTween = TweenService:Create(loadingScreen, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 1})
+    local fadeTween = TweenService:Create(loadingScreen, TweenInfo.new(0.4), {BackgroundTransparency = 1})
     TweenService:Create(loadingTitle, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
     TweenService:Create(barBg, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
     TweenService:Create(barFill, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
@@ -235,178 +294,160 @@ runRealisticLoading(barFill, function()
     fadeTween.Completed:Connect(function()
         loadingScreen.Visible = false
         main.Visible = true
-        patchNotes.Visible = true -- TRIGGERS PATCH NOTES TO POP UP!
+        patchNotes.Visible = true 
     end)
 end)
 
 -- ==========================================
--- MAIN UI ELEMENTS & NAVIGATION
+-- NAVIGATION ELEMENTS
 -- ==========================================
-local title = Instance.new("TextLabel")
-title.Name = "Title"
-title.Size = UDim2.new(1, -40, 0, 50)
-title.Position = UDim2.new(0, 40, 0, 0)
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, -90, 0, 50)
+title.Position = UDim2.new(0, 85, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "DK-SCRIPTS v1.2"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
-title.Parent = main
 
-local backBtn = Instance.new("TextButton")
-backBtn.Name = "BackButton"
+local backBtn = Instance.new("TextButton", main)
 backBtn.Size = UDim2.new(0, 32, 0, 32)
-backBtn.Position = UDim2.new(0, 8, 0, 9)
+backBtn.Position = UDim2.new(0, 45, 0, 9) 
 backBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-backBtn.BorderSizePixel = 0
-backBtn.Text = "←"
+backBtn.Text = "<"
 backBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 backBtn.TextScaled = true
 backBtn.Font = Enum.Font.GothamBold
 backBtn.Visible = false
-backBtn.Parent = main
+Instance.new("UICorner", backBtn).CornerRadius = UDim.new(0, 8)
 
-local backCorner = Instance.new("UICorner")
-backCorner.CornerRadius = UDim.new(0, 8)
-backCorner.Parent = backBtn
-
-local startPage = Instance.new("Frame")
-startPage.Name = "StartPage"
+local startPage = Instance.new("Frame", main)
 startPage.Size = UDim2.new(1, 0, 1, -50)
 startPage.Position = UDim2.new(0, 0, 0, 50)
 startPage.BackgroundTransparency = 1
-startPage.Parent = main
 
-local settingsPage = Instance.new("Frame")
-settingsPage.Name = "SettingsPage"
+local settingsPage = Instance.new("Frame", main)
 settingsPage.Size = UDim2.new(1, 0, 1, -50)
 settingsPage.Position = UDim2.new(0, 0, 0, 50)
 settingsPage.BackgroundTransparency = 1
 settingsPage.Visible = false
-settingsPage.Parent = main
 
-local gamePage = Instance.new("Frame")
-gamePage.Name = "GamePage"
+local gamePage = Instance.new("Frame", main)
 gamePage.Size = UDim2.new(1, 0, 1, -50)
 gamePage.Position = UDim2.new(0, 0, 0, 50)
 gamePage.BackgroundTransparency = 1
 gamePage.Visible = false
-gamePage.Parent = main
 
--- Main Menu Buttons
-local settingsBtn = Instance.new("TextButton")
-settingsBtn.Name = "SettingsButton"
+local settingsBtn = Instance.new("TextButton", startPage)
 settingsBtn.Size = UDim2.new(0, 260, 0, 45)
 settingsBtn.Position = UDim2.new(0.5, -130, 0, 15)
 settingsBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-settingsBtn.BorderSizePixel = 0
 settingsBtn.Text = "Open Settings"
 settingsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 settingsBtn.TextScaled = true
 settingsBtn.Font = Enum.Font.Gotham
-settingsBtn.Parent = startPage
+Instance.new("UICorner", settingsBtn).CornerRadius = UDim.new(0, 10)
 
-local settingsBtnCorner = Instance.new("UICorner")
-settingsBtnCorner.CornerRadius = UDim.new(0, 10)
-settingsBtnCorner.Parent = settingsBtn
-
-local startBtn = Instance.new("TextButton")
-startBtn.Name = "StartButton"
+local startBtn = Instance.new("TextButton", startPage)
 startBtn.Size = UDim2.new(0, 260, 0, 45)
 startBtn.Position = UDim2.new(0.5, -130, 0, 75)
 startBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 90)
-startBtn.BorderSizePixel = 0
 startBtn.Text = "Start!"
 startBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 startBtn.TextScaled = true
 startBtn.Font = Enum.Font.GothamBold
-startBtn.Parent = startPage
+Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 10)
 
-local startBtnCorner = Instance.new("UICorner")
-startBtnCorner.CornerRadius = UDim.new(0, 10)
-startBtnCorner.Parent = startBtn
-
-local devBtn = Instance.new("TextButton")
-devBtn.Name = "DevButton"
+local devBtn = Instance.new("TextButton", startPage)
 devBtn.Size = UDim2.new(0, 260, 0, 45)
 devBtn.Position = UDim2.new(0.5, -130, 0, 135)
 devBtn.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
-devBtn.BorderSizePixel = 0
 devBtn.Text = "DEVELOPER Console"
 devBtn.TextColor3 = Color3.fromRGB(25, 25, 25)
 devBtn.TextScaled = true
 devBtn.Font = Enum.Font.GothamBold
 devBtn.Visible = isDev 
-devBtn.Parent = startPage
+Instance.new("UICorner", devBtn).CornerRadius = UDim.new(0, 10)
 
-local devBtnCorner = Instance.new("UICorner")
-devBtnCorner.CornerRadius = UDim.new(0, 10)
-devBtnCorner.Parent = devBtn
-
--- Settings System
-local killBtn = Instance.new("TextButton")
-killBtn.Name = "KillButton"
-killBtn.Size = UDim2.new(0, 260, 0, 34)
-killBtn.Position = UDim2.new(0.5, -130, 0, 14)
+-- ==========================================
+-- SETTINGS SYSTEM & KEYBIND
+-- ==========================================
+local killBtn = Instance.new("TextButton", settingsPage)
+killBtn.Size = UDim2.new(0, 260, 0, 32)
+killBtn.Position = UDim2.new(0.5, -130, 0, 10)
 killBtn.BackgroundColor3 = Color3.fromRGB(170, 40, 40)
-killBtn.BorderSizePixel = 0
 killBtn.Text = "Kill Script"
 killBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-killBtn.TextScaled = true
 killBtn.Font = Enum.Font.GothamBold
-killBtn.Parent = settingsPage
-local killCorner = Instance.new("UICorner")
-killCorner.CornerRadius = UDim.new(0, 8)
-killCorner.Parent = killBtn
+killBtn.TextSize = 16
+Instance.new("UICorner", killBtn).CornerRadius = UDim.new(0, 8)
 
-local fpsBtn = Instance.new("TextButton")
-fpsBtn.Name = "FpsButton"
-fpsBtn.Size = UDim2.new(0, 260, 0, 34)
-fpsBtn.Position = UDim2.new(0.5, -130, 0, 58)
+local fpsBtn = Instance.new("TextButton", settingsPage)
+fpsBtn.Size = UDim2.new(0, 260, 0, 32)
+fpsBtn.Position = UDim2.new(0.5, -130, 0, 52)
 fpsBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-fpsBtn.BorderSizePixel = 0
 fpsBtn.Text = "Show FPS: OFF"
 fpsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-fpsBtn.TextScaled = true
 fpsBtn.Font = Enum.Font.Gotham
-fpsBtn.Parent = settingsPage
-local fpsCorner = Instance.new("UICorner")
-fpsCorner.CornerRadius = UDim.new(0, 8)
-fpsCorner.Parent = fpsBtn
+fpsBtn.TextSize = 14
+Instance.new("UICorner", fpsBtn).CornerRadius = UDim.new(0, 8)
 
-local pingBtn = Instance.new("TextButton")
-pingBtn.Name = "PingButton"
-pingBtn.Size = UDim2.new(0, 260, 0, 34)
-pingBtn.Position = UDim2.new(0.5, -130, 0, 102)
+local pingBtn = Instance.new("TextButton", settingsPage)
+pingBtn.Size = UDim2.new(0, 260, 0, 32)
+pingBtn.Position = UDim2.new(0.5, -130, 0, 94)
 pingBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-pingBtn.BorderSizePixel = 0
 pingBtn.Text = "Show Ping: OFF"
 pingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-pingBtn.TextScaled = true
 pingBtn.Font = Enum.Font.Gotham
-pingBtn.Parent = settingsPage
-local pingCorner = Instance.new("UICorner")
-pingCorner.CornerRadius = UDim.new(0, 8)
-pingCorner.Parent = pingBtn
+pingBtn.TextSize = 14
+Instance.new("UICorner", pingBtn).CornerRadius = UDim.new(0, 8)
 
-local gameLabel = Instance.new("TextLabel")
-gameLabel.Name = "GameLabel"
-gameLabel.Size = UDim2.new(0, 260, 0, 34)
-gameLabel.Position = UDim2.new(0.5, -130, 0, 146)
+local gameLabel = Instance.new("TextLabel", settingsPage)
+gameLabel.Size = UDim2.new(0, 260, 0, 32)
+gameLabel.Position = UDim2.new(0.5, -130, 0, 136)
 gameLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-gameLabel.BorderSizePixel = 0
 gameLabel.Text = "Game ID: " .. tostring(game.PlaceId)
 gameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-gameLabel.TextScaled = true
 gameLabel.Font = Enum.Font.Gotham
-gameLabel.Parent = settingsPage
-local gameCorner = Instance.new("UICorner")
-gameCorner.CornerRadius = UDim.new(0, 8)
-gameCorner.Parent = gameLabel
+gameLabel.TextSize = 14
+Instance.new("UICorner", gameLabel).CornerRadius = UDim.new(0, 8)
 
--- HUD Overlays
-local overlay = Instance.new("TextLabel")
-overlay.Name = "Overlay"
+local keybindBtn = Instance.new("TextButton", settingsPage)
+keybindBtn.Size = UDim2.new(0, 260, 0, 32)
+keybindBtn.Position = UDim2.new(0.5, -130, 0, 178)
+keybindBtn.BackgroundColor3 = Color3.fromRGB(100, 50, 180)
+keybindBtn.Text = "Toggle Key: " .. toggleKey.Name
+keybindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+keybindBtn.Font = Enum.Font.GothamBold
+keybindBtn.TextSize = 14
+Instance.new("UICorner", keybindBtn).CornerRadius = UDim.new(0, 8)
+
+local listeningForKey = false
+keybindBtn.Activated:Connect(function()
+    listeningForKey = true
+    keybindBtn.Text = "Press any key..."
+end)
+
+UIS.InputBegan:Connect(function(input, gpe)
+    if listeningForKey and input.UserInputType == Enum.UserInputType.Keyboard then
+        toggleKey = input.KeyCode
+        keybindBtn.Text = "Toggle Key: " .. toggleKey.Name
+        listeningForKey = false
+        return
+    end
+    
+    if not gpe and input.KeyCode == toggleKey then
+        main.Visible = not main.Visible
+        dkToggle.Visible = not main.Visible
+        patchNotes.Visible = false 
+        
+        if not main.Visible then
+            showCloseNotification()
+        end
+    end
+end)
+
+local overlay = Instance.new("TextLabel", gui)
 overlay.Size = UDim2.new(0, 220, 0, 50)
 overlay.Position = UDim2.new(0, 10, 0, 10)
 overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -415,16 +456,9 @@ overlay.TextColor3 = Color3.fromRGB(255, 255, 255)
 overlay.TextScaled = true
 overlay.Font = Enum.Font.GothamBold
 overlay.Visible = false
-overlay.Parent = gui
-local overlayCorner = Instance.new("UICorner")
-overlayCorner.CornerRadius = UDim.new(0, 8)
-overlayCorner.Parent = overlay
+Instance.new("UICorner", overlay).CornerRadius = UDim.new(0, 8)
 
-local showFPS = false
-local showPing = false
-local fpsValue = 0
-local lastUpdate = tick()
-local frames = 0
+local showFPS, showPing, fpsValue, frames, lastUpdate = false, false, 0, 0, tick()
 
 RunService.RenderStepped:Connect(function()
     frames += 1
@@ -432,6 +466,13 @@ RunService.RenderStepped:Connect(function()
         fpsValue = frames
         frames = 0
         lastUpdate = tick()
+    end
+    
+    if showFPS or showPing then
+        local parts = {}
+        if showFPS then table.insert(parts, "FPS: " .. tostring(fpsValue)) end
+        if showPing then table.insert(parts, "Ping: " .. tostring(math.floor((player:GetNetworkPing() or 0) * 1000))) end
+        overlay.Text = table.concat(parts, "  ")
     end
 end)
 
@@ -447,34 +488,19 @@ pingBtn.Activated:Connect(function()
     overlay.Visible = showFPS or showPing
 end)
 
-RunService.RenderStepped:Connect(function()
-    local parts = {}
-    if showFPS then table.insert(parts, "FPS: " .. tostring(fpsValue)) end
-    if showPing then table.insert(parts, "Ping: " .. tostring(math.floor((player:GetNetworkPing() or 0) * 1000))) end
-    overlay.Text = table.concat(parts, "  ")
-end)
-
 -- ==========================================
--- EXCLUSIVE DEV UI (CONSOLE)
+-- DEV CONSOLE
 -- ==========================================
-local consoleMain = Instance.new("Frame")
-consoleMain.Name = "DevConsole"
+local consoleMain = Instance.new("Frame", gui)
 consoleMain.Size = UDim2.new(0, 480, 0, 340)
 consoleMain.Position = UDim2.new(0.5, 190, 0.5, -170)
 consoleMain.BackgroundColor3 = Color3.fromRGB(25, 20, 10) 
-consoleMain.BorderSizePixel = 0
-consoleMain.ClipsDescendants = true
 consoleMain.Visible = false
-consoleMain.Parent = gui
-
+consoleMain.ClipsDescendants = true
+Instance.new("UICorner", consoleMain).CornerRadius = UDim.new(0, 12)
 makeDraggable(consoleMain)
 
-local consoleCorner = Instance.new("UICorner")
-consoleCorner.CornerRadius = UDim.new(0, 12)
-consoleCorner.Parent = consoleMain
-
-local consoleTitle = Instance.new("TextLabel")
-consoleTitle.Name = "Greeting"
+local consoleTitle = Instance.new("TextLabel", consoleMain)
 consoleTitle.Size = UDim2.new(1, -40, 0, 50)
 consoleTitle.Position = UDim2.new(0, 40, 0, 0)
 consoleTitle.BackgroundTransparency = 1
@@ -482,64 +508,77 @@ consoleTitle.Text = "Welcome Developer!"
 consoleTitle.TextColor3 = Color3.fromRGB(255, 180, 0)
 consoleTitle.TextScaled = true
 consoleTitle.Font = Enum.Font.GothamBold
-consoleTitle.Parent = consoleMain
 
-local consoleBackBtn = Instance.new("TextButton")
-consoleBackBtn.Name = "ConsoleBackButton"
+local consoleBackBtn = Instance.new("TextButton", consoleMain)
 consoleBackBtn.Size = UDim2.new(0, 32, 0, 32)
 consoleBackBtn.Position = UDim2.new(0, 8, 0, 9)
 consoleBackBtn.BackgroundColor3 = Color3.fromRGB(60, 45, 15)
-consoleBackBtn.BorderSizePixel = 0
-consoleBackBtn.Text = "←"
+consoleBackBtn.Text = "<"
 consoleBackBtn.TextColor3 = Color3.fromRGB(255, 180, 0)
 consoleBackBtn.TextScaled = true
 consoleBackBtn.Font = Enum.Font.GothamBold
 consoleBackBtn.Visible = false
-consoleBackBtn.Parent = consoleMain
-local consoleBackCorner = Instance.new("UICorner")
-consoleBackCorner.CornerRadius = UDim.new(0, 8)
-consoleBackCorner.Parent = consoleBackBtn
+Instance.new("UICorner", consoleBackBtn).CornerRadius = UDim.new(0, 8)
 
-local consoleStartPage = Instance.new("Frame")
-consoleStartPage.Name = "ConsoleStartPage"
+-- DEV CONSOLE LOADING SCREEN
+local devLoadingScreen = Instance.new("Frame", consoleMain)
+devLoadingScreen.Size = UDim2.new(1, 0, 1, 0)
+devLoadingScreen.BackgroundColor3 = Color3.fromRGB(25, 20, 10)
+devLoadingScreen.ZIndex = 20
+devLoadingScreen.Visible = false
+
+local devLoadingTitle = Instance.new("TextLabel", devLoadingScreen)
+devLoadingTitle.Size = UDim2.new(1, 0, 0, 40)
+devLoadingTitle.Position = UDim2.new(0, 0, 0.5, -30)
+devLoadingTitle.BackgroundTransparency = 1
+devLoadingTitle.Text = "Connecting to JSONbin.."
+devLoadingTitle.TextColor3 = Color3.fromRGB(255, 180, 0)
+devLoadingTitle.Font = Enum.Font.GothamBold
+devLoadingTitle.TextSize = 20
+devLoadingTitle.ZIndex = 21
+
+local devBarBg = Instance.new("Frame", devLoadingScreen)
+devBarBg.Size = UDim2.new(0, 260, 0, 12)
+devBarBg.Position = UDim2.new(0.5, -130, 0.5, 20)
+devBarBg.BackgroundColor3 = Color3.fromRGB(45, 35, 20)
+devBarBg.ZIndex = 21
+Instance.new("UICorner", devBarBg).CornerRadius = UDim.new(1, 0)
+
+local devBarFill = Instance.new("Frame", devBarBg)
+devBarFill.Size = UDim2.new(0, 0, 1, 0)
+devBarFill.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
+devBarFill.ZIndex = 21
+Instance.new("UICorner", devBarFill).CornerRadius = UDim.new(1, 0)
+
+local consoleStartPage = Instance.new("Frame", consoleMain)
 consoleStartPage.Size = UDim2.new(1, 0, 1, -50)
 consoleStartPage.Position = UDim2.new(0, 0, 0, 50)
 consoleStartPage.BackgroundTransparency = 1
-consoleStartPage.Parent = consoleMain
+consoleStartPage.Visible = false
 
--- Console Layout Subsections
 local savedListFrame = Instance.new("Frame", consoleStartPage)
 savedListFrame.Size = UDim2.new(0, 250, 1, -20)
 savedListFrame.Position = UDim2.new(0, 10, 0, 10)
 savedListFrame.BackgroundColor3 = Color3.fromRGB(35, 28, 14)
-local slfCorner = Instance.new("UICorner")
-slfCorner.CornerRadius = UDim.new(0, 8)
-slfCorner.Parent = savedListFrame
+Instance.new("UICorner", savedListFrame).CornerRadius = UDim.new(0, 8)
 
-local savedList = Instance.new("ScrollingFrame")
-savedList.Name = "SavedScriptsList"
+local savedList = Instance.new("ScrollingFrame", savedListFrame)
 savedList.Size = UDim2.new(1, -10, 1, -10)
 savedList.Position = UDim2.new(0, 5, 0, 5)
 savedList.BackgroundTransparency = 1
 savedList.ScrollBarThickness = 4
 savedList.ScrollBarImageColor3 = Color3.fromRGB(255, 180, 0)
 savedList.AutomaticCanvasSize = Enum.AutomaticSize.Y 
-savedList.CanvasSize = UDim2.new(0, 0, 0, 0)
-savedList.Parent = savedListFrame
 
-local listLayout = Instance.new("UIListLayout")
+local listLayout = Instance.new("UIListLayout", savedList)
 listLayout.Padding = UDim.new(0, 8)
 listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-listLayout.Parent = savedList
 
--- ACTIVITY WINDOW SECTION
 local activityFrame = Instance.new("Frame", consoleStartPage)
 activityFrame.Size = UDim2.new(0, 200, 1, -20)
 activityFrame.Position = UDim2.new(0, 270, 0, 10)
 activityFrame.BackgroundColor3 = Color3.fromRGB(35, 28, 14)
-local afCorner = Instance.new("UICorner")
-afCorner.CornerRadius = UDim.new(0, 8)
-afCorner.Parent = activityFrame
+Instance.new("UICorner", activityFrame).CornerRadius = UDim.new(0, 8)
 
 local activityTitle = Instance.new("TextLabel", activityFrame)
 activityTitle.Size = UDim2.new(1, 0, 0, 25)
@@ -556,25 +595,19 @@ activityList.BackgroundTransparency = 1
 activityList.ScrollBarThickness = 2
 activityList.ScrollBarImageColor3 = Color3.fromRGB(255, 180, 0)
 activityList.AutomaticCanvasSize = Enum.AutomaticSize.Y
-activityList.CanvasSize = UDim2.new(0, 0, 0, 0)
 
-local activityLayout = Instance.new("UIListLayout")
+local activityLayout = Instance.new("UIListLayout", activityList)
 activityLayout.Padding = UDim.new(0, 6)
-activityLayout.Parent = activityList
 
 local function populateActivityWindow()
     for _, child in pairs(activityList:GetChildren()) do
-        if child:IsA("Frame") then
-            child:Destroy()
-        end
+        if child:IsA("Frame") then child:Destroy() end
     end
-    
     for username, info in pairs(developerRegistry) do
         local row = Instance.new("Frame", activityList)
         row.Size = UDim2.new(1, 0, 0, 35)
         row.BackgroundColor3 = Color3.fromRGB(45, 36, 18)
-        local rowCorner = Instance.new("UICorner", row)
-        rowCorner.CornerRadius = UDim.new(0, 6)
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
         
         local dot = Instance.new("Frame", row)
         dot.Size = UDim2.new(0, 10, 0, 10)
@@ -582,15 +615,10 @@ local function populateActivityWindow()
         Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
         
         if game.Players:FindFirstChild(username) then
-            dot.BackgroundColor3 = Color3.fromRGB(0, 255, 100) -- GREEN (In Game)
+            dot.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
         else
-            if username == "JJDA_ONE" then
-                dot.BackgroundColor3 = Color3.fromRGB(0, 150, 255) -- BLUE (In Menu)
-            elseif username == "DaSpeed321" then
-                dot.BackgroundColor3 = Color3.fromRGB(255, 50, 50) -- RED (Offline)
-            else
-                dot.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-            end
+            if username == "JJDA_ONE" then dot.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+            else dot.BackgroundColor3 = Color3.fromRGB(255, 50, 50) end
         end
         
         local nameLabel = Instance.new("TextLabel", row)
@@ -615,187 +643,141 @@ local function populateActivityWindow()
     end
 end
 
--- INTERNAL CONSOLE LOADING SCREEN
-local devLoader = Instance.new("Frame", consoleMain)
-devLoader.Size = UDim2.new(1, 0, 1, 0)
-devLoader.BackgroundColor3 = Color3.fromRGB(25, 20, 10)
-devLoader.ZIndex = 10
-devLoader.Visible = false
-
-local devLoaderTitle = Instance.new("TextLabel", devLoader)
-devLoaderTitle.Size = UDim2.new(1, 0, 0, 40)
-devLoaderTitle.Position = UDim2.new(0, 0, 0, 120)
-devLoaderTitle.BackgroundTransparency = 1
-devLoaderTitle.Text = "Syncing Dev Channel..."
-devLoaderTitle.TextColor3 = Color3.fromRGB(255, 180, 0)
-devLoaderTitle.Font = Enum.Font.GothamBold
-devLoaderTitle.TextSize = 18
-devLoaderTitle.ZIndex = 10
-
-local devBarBg = Instance.new("Frame", devLoader)
-devBarBg.Size = UDim2.new(0, 240, 0, 12)
-devBarBg.Position = UDim2.new(0.5, -120, 0.5, 10)
-devBarBg.BackgroundColor3 = Color3.fromRGB(50, 40, 20)
-devBarBg.ZIndex = 10
-Instance.new("UICorner", devBarBg).CornerRadius = UDim.new(1, 0)
-
-local devBarFill = Instance.new("Frame", devBarBg)
-devBarFill.Size = UDim2.new(0, 0, 1, 0)
-devBarFill.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
-devBarFill.ZIndex = 10
-Instance.new("UICorner", devBarFill).CornerRadius = UDim.new(1, 0)
-
--- DEV INTERACTION PANEL TOGGLE
-devBtn.Activated:Connect(function()
-    if not consoleMain.Visible then
-        consoleMain.Size = UDim2.new(0, 480, 0, 340)
-        consoleMain.Visible = true
-        devLoader.Visible = true
-        consoleStartPage.Visible = false
-        
-        populateActivityWindow()
-        
-        runRealisticLoading(devBarFill, function()
-            devLoader.Visible = false
-            consoleStartPage.Visible = true
-        end)
-    else
-        consoleMain.Visible = false
-    end
-end)
-
-local plusBtn = Instance.new("TextButton")
-plusBtn.Name = "PlusButton"
-plusBtn.Size = UDim2.new(0, 40, 0, 40)
-plusBtn.Position = UDim2.new(1, -55, 1, -55) 
-plusBtn.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
-plusBtn.BorderSizePixel = 0
-plusBtn.Text = "+"
-plusBtn.TextColor3 = Color3.fromRGB(25, 20, 10)
-plusBtn.TextScaled = true
-plusBtn.Font = Enum.Font.GothamBold
-plusBtn.Parent = consoleStartPage
-local plusCorner = Instance.new("UICorner")
-plusCorner.CornerRadius = UDim.new(1, 0) 
-plusCorner.Parent = plusBtn
-
-local addScriptPage = Instance.new("Frame")
-addScriptPage.Name = "AddScriptPage"
+-- ADD/EDIT SCRIPT UI
+local addScriptPage = Instance.new("Frame", consoleMain)
 addScriptPage.Size = UDim2.new(1, 0, 1, -50)
 addScriptPage.Position = UDim2.new(0, 0, 0, 50)
 addScriptPage.BackgroundTransparency = 1
 addScriptPage.Visible = false
-addScriptPage.Parent = consoleMain
 
--- Title Form Input
-local titleBox = Instance.new("TextBox")
-titleBox.Name = "TitleBox"
+-- ANIMATED CONSOLE OPEN
+devBtn.Activated:Connect(function()
+    if not consoleMain.Visible then
+        consoleMain.Size = UDim2.new(0, 0, 0, 0)
+        consoleMain.Position = UDim2.new(0.5, 430, 0.5, 0)
+        consoleMain.Visible = true
+        
+        consoleStartPage.Visible = false
+        addScriptPage.Visible = false
+        devLoadingScreen.Visible = true
+        
+        devLoadingScreen.BackgroundTransparency = 0
+        devLoadingTitle.TextTransparency = 0
+        devBarBg.BackgroundTransparency = 0
+        devBarFill.BackgroundTransparency = 0
+        
+        local openTween = TweenService:Create(consoleMain, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 480, 0, 340),
+            Position = UDim2.new(0.5, 190, 0.5, -170)
+        })
+        openTween:Play()
+        populateActivityWindow()
+        
+        openTween.Completed:Connect(function()
+            runRealisticLoading(devBarFill, function()
+                local fadeOut = TweenService:Create(devLoadingScreen, TweenInfo.new(0.4), {BackgroundTransparency = 1})
+                TweenService:Create(devLoadingTitle, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
+                TweenService:Create(devBarBg, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
+                TweenService:Create(devBarFill, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
+                
+                fadeOut:Play()
+                fadeOut.Completed:Connect(function()
+                    devLoadingScreen.Visible = false
+                    consoleStartPage.Visible = true
+                end)
+            end)
+        end)
+    else
+        local closeTween = TweenService:Create(consoleMain, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 430, 0.5, 0)
+        })
+        closeTween:Play()
+        closeTween.Completed:Connect(function()
+            consoleMain.Visible = false
+        end)
+    end
+end)
+
+local plusBtn = Instance.new("TextButton", consoleStartPage)
+plusBtn.Size = UDim2.new(0, 40, 0, 40)
+plusBtn.Position = UDim2.new(1, -55, 1, -55) 
+plusBtn.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
+plusBtn.Text = "+"
+plusBtn.TextColor3 = Color3.fromRGB(25, 20, 10)
+plusBtn.TextScaled = true
+plusBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", plusBtn).CornerRadius = UDim.new(1, 0) 
+
+local titleBox = Instance.new("TextBox", addScriptPage)
 titleBox.Size = UDim2.new(0, 400, 0, 40)
 titleBox.Position = UDim2.new(0.5, -200, 0, 10)
 titleBox.BackgroundColor3 = Color3.fromRGB(40, 30, 15)
-titleBox.BorderSizePixel = 0
 titleBox.TextColor3 = Color3.fromRGB(255, 180, 0)
 titleBox.PlaceholderText = "Save File Title..."
-titleBox.PlaceholderColor3 = Color3.fromRGB(150, 110, 0)
-titleBox.Text = ""
-titleBox.ClearTextOnFocus = false
 titleBox.Font = Enum.Font.GothamBold
 titleBox.TextSize = 16
-titleBox.Parent = addScriptPage
-local titleBoxCorner = Instance.new("UICorner")
-titleBoxCorner.CornerRadius = UDim.new(0, 8)
-titleBoxCorner.Parent = titleBox
+Instance.new("UICorner", titleBox).CornerRadius = UDim.new(0, 8)
 
--- Code Engine Scroll Form
-local scriptScroll = Instance.new("ScrollingFrame")
-scriptScroll.Name = "ScriptScroll"
+local scriptScroll = Instance.new("ScrollingFrame", addScriptPage)
 scriptScroll.Size = UDim2.new(0, 400, 0, 85)
 scriptScroll.Position = UDim2.new(0.5, -200, 0, 60)
 scriptScroll.BackgroundColor3 = Color3.fromRGB(40, 30, 15)
-scriptScroll.BorderSizePixel = 0
 scriptScroll.ScrollBarThickness = 4
-scriptScroll.ScrollBarImageColor3 = Color3.fromRGB(255, 180, 0)
 scriptScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-scriptScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-scriptScroll.Parent = addScriptPage
-local scrollCorner = Instance.new("UICorner")
-scrollCorner.CornerRadius = UDim.new(0, 8)
-scrollCorner.Parent = scriptScroll
+Instance.new("UICorner", scriptScroll).CornerRadius = UDim.new(0, 8)
 
-local scriptBox = Instance.new("TextBox")
-scriptBox.Name = "ScriptBox"
+local scriptBox = Instance.new("TextBox", scriptScroll)
 scriptBox.Size = UDim2.new(1, -10, 0, 0)
 scriptBox.Position = UDim2.new(0, 5, 0, 5)
 scriptBox.BackgroundTransparency = 1
 scriptBox.TextColor3 = Color3.fromRGB(255, 180, 0)
 scriptBox.PlaceholderText = "Paste Script Here..."
-scriptBox.PlaceholderColor3 = Color3.fromRGB(150, 110, 0)
-scriptBox.Text = ""
 scriptBox.TextWrapped = true
 scriptBox.MultiLine = true
 scriptBox.TextXAlignment = Enum.TextXAlignment.Left
 scriptBox.TextYAlignment = Enum.TextYAlignment.Top
-scriptBox.ClearTextOnFocus = false
 scriptBox.Font = Enum.Font.Code
 scriptBox.TextSize = 14
 scriptBox.AutomaticSize = Enum.AutomaticSize.Y 
-scriptBox.Parent = scriptScroll
 
--- Deployment Place Configuration Box
-local idBox = Instance.new("TextBox")
-idBox.Name = "IdBox"
+local idBox = Instance.new("TextBox", addScriptPage)
 idBox.Size = UDim2.new(0, 400, 0, 40)
 idBox.Position = UDim2.new(0.5, -200, 0, 155)
 idBox.BackgroundColor3 = Color3.fromRGB(40, 30, 15)
-idBox.BorderSizePixel = 0
 idBox.TextColor3 = Color3.fromRGB(255, 180, 0)
 idBox.PlaceholderText = "Game ID..."
-idBox.PlaceholderColor3 = Color3.fromRGB(150, 110, 0)
-idBox.Text = ""
-idBox.ClearTextOnFocus = false
 idBox.Font = Enum.Font.Gotham
 idBox.TextSize = 14
-idBox.Parent = addScriptPage
-local idBoxCorner = Instance.new("UICorner")
-idBoxCorner.CornerRadius = UDim.new(0, 8)
-idBoxCorner.Parent = idBox
+Instance.new("UICorner", idBox).CornerRadius = UDim.new(0, 8)
 
--- Action Commits
-local saveBtn = Instance.new("TextButton")
-saveBtn.Name = "SaveButton"
+local saveBtn = Instance.new("TextButton", addScriptPage)
 saveBtn.Size = UDim2.new(0, 190, 0, 45)
 saveBtn.Position = UDim2.new(0.5, -200, 0, 210)
 saveBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 90)
-saveBtn.BorderSizePixel = 0
 saveBtn.Text = "SAVE"
 saveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 saveBtn.TextScaled = true
 saveBtn.Font = Enum.Font.GothamBold
-saveBtn.Parent = addScriptPage
-local saveCorner = Instance.new("UICorner")
-saveCorner.CornerRadius = UDim.new(0, 8)
-saveCorner.Parent = saveBtn
+Instance.new("UICorner", saveBtn).CornerRadius = UDim.new(0, 8)
 
-local discardBtn = Instance.new("TextButton")
-discardBtn.Name = "DiscardButton"
+local discardBtn = Instance.new("TextButton", addScriptPage)
 discardBtn.Size = UDim2.new(0, 190, 0, 45)
 discardBtn.Position = UDim2.new(0.5, 10, 0, 210)
 discardBtn.BackgroundColor3 = Color3.fromRGB(170, 40, 40) 
-discardBtn.BorderSizePixel = 0
 discardBtn.Text = "DISCARD"
 discardBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 discardBtn.TextScaled = true
 discardBtn.Font = Enum.Font.GothamBold
-discardBtn.Parent = addScriptPage
-local discardCorner = Instance.new("UICorner")
-discardCorner.CornerRadius = UDim.new(0, 8)
-discardCorner.Parent = discardBtn
+Instance.new("UICorner", discardBtn).CornerRadius = UDim.new(0, 8)
 
 local currentEditingCard = nil 
 
 -- ==========================================
--- GAME DETECTION SYSTEM (RESTORED MAIN UI)
+-- GAME DETECTION & EXECUTION
 -- ==========================================
+local executorRequest = request or http_request or (syn and syn.request) or (http and http.request)
+
 local function CheckForSupportedGame()
     local currentId = tostring(game.PlaceId)
     for _, child in pairs(savedList:GetChildren()) do
@@ -814,18 +796,17 @@ local function showGameDetected()
     settingsPage.Visible = false
     gamePage.Visible = true
     backBtn.Visible = true
-
     gamePage:ClearAllChildren()
     
     local foundScript = CheckForSupportedGame()
 
-    local label = Instance.new("TextLabel")
+    local label = Instance.new("TextLabel", gamePage)
     label.Size = UDim2.new(0, 260, 0, 40)
     label.Position = UDim2.new(0.5, -130, 0, 15)
     label.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    label.BorderSizePixel = 0
     label.TextScaled = true
     label.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", label).CornerRadius = UDim.new(0, 8)
     
     if foundScript then
         label.Text = "Game Supported!"
@@ -835,34 +816,23 @@ local function showGameDetected()
         label.TextColor3 = Color3.fromRGB(255, 100, 100)
     end
     
-    label.Parent = gamePage
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 8)
-    c.Parent = label
-    
-    -- RESTORED EXECUTE BUTTON
-    local executeBtn = Instance.new("TextButton")
-    executeBtn.Name = "ExecuteButton"
+    local executeBtn = Instance.new("TextButton", gamePage)
     executeBtn.Size = UDim2.new(0, 260, 0, 40)
     executeBtn.Position = UDim2.new(0.5, -130, 0, 70)
     executeBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    executeBtn.BorderSizePixel = 0
     executeBtn.Text = "EXECUTE"
     executeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     executeBtn.TextScaled = true
     executeBtn.Font = Enum.Font.GothamBold
-    executeBtn.Parent = gamePage
-    local execCorner = Instance.new("UICorner")
-    execCorner.CornerRadius = UDim.new(0, 8)
-    execCorner.Parent = executeBtn
+    Instance.new("UICorner", executeBtn).CornerRadius = UDim.new(0, 8)
     
     executeBtn.Activated:Connect(function()
         if foundScript and foundScript ~= "" then
-            local success, err = pcall(function()
-                loadstring(foundScript)()
-            end)
-            if not success then
-                warn("Error executing script: " .. tostring(err))
+            local success, err = pcall(function() loadstring(foundScript)() end)
+            if success then
+                main.Visible = false
+                dkToggle.Visible = true
+            else
                 executeBtn.Text = "Execution Error"
                 task.wait(2)
                 executeBtn.Text = "EXECUTE"
@@ -874,21 +844,35 @@ local function showGameDetected()
         end
     end)
 
-    -- RESTORED DISCORD BUTTON
-    local discordBtn = Instance.new("TextButton")
-    discordBtn.Name = "DiscordButton"
+    local discordBtn = Instance.new("TextButton", gamePage)
     discordBtn.Size = UDim2.new(0, 260, 0, 40)
     discordBtn.Position = UDim2.new(0.5, -130, 0, 125)
     discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
-    discordBtn.BorderSizePixel = 0
     discordBtn.Text = "Join Discord"
     discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     discordBtn.TextSize = 18
     discordBtn.Font = Enum.Font.GothamBold
-    discordBtn.Parent = gamePage
-    local discordCorner = Instance.new("UICorner")
-    discordCorner.CornerRadius = UDim.new(0, 8)
-    discordCorner.Parent = discordBtn
+    Instance.new("UICorner", discordBtn).CornerRadius = UDim.new(0, 8)
+
+    discordBtn.Activated:Connect(function()
+        if setclipboard then
+            setclipboard("https://discord.gg/8Dfnrt88J8")
+            local originalText = discordBtn.Text
+            local originalColor = discordBtn.BackgroundColor3
+            discordBtn.Text = "Copied to clipboard!"
+            discordBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 90) 
+            task.delay(2, function()
+                discordBtn.Text = originalText
+                discordBtn.BackgroundColor3 = originalColor
+            end)
+        else
+            local originalText = discordBtn.Text
+            discordBtn.Text = "Clipboard not supported!"
+            task.delay(2, function()
+                discordBtn.Text = originalText
+            end)
+        end
+    end)
 end
 
 settingsBtn.Activated:Connect(function()
@@ -909,49 +893,34 @@ killBtn.Activated:Connect(function()
 end)
 
 startBtn.Activated:Connect(function()
-    startBtn.Text = "Started"
-    task.wait(0.2)
-    startBtn.Text = "Start!"
     showGameDetected()
 end)
 
 -- ==========================================
--- CLOUD ACCESS ARCHITECTURE (JSONBIN ENGAGEMENT)
+-- CLOUD ACCESS ARCHITECTURE (JSONBIN)
 -- ==========================================
-local executorRequest = request or http_request or (syn and syn.request) or (http and http.request)
-
 local function SaveData()
-    if not executorRequest then 
-        warn("HTTP requests are not supported on your executor!") 
-        return 
-    end
-    
+    if not executorRequest then return end
     local dataToSave = {}
     for _, child in pairs(savedList:GetChildren()) do
         if child:IsA("Frame") and child:FindFirstChild("TitleLabel") then
-            local cardTitleText = child.TitleLabel.Text
-            local cardIdText = string.gsub(child.IdLabel.Text, "Game ID: ", "")
-            local cardCodeText = child:GetAttribute("SavedScript") or ""
-            table.insert(dataToSave, {Title = cardTitleText, ID = cardIdText, Code = cardCodeText})
+            table.insert(dataToSave, {
+                Title = child.TitleLabel.Text,
+                ID = string.gsub(child.IdLabel.Text, "Game ID: ", ""),
+                Code = child:GetAttribute("SavedScript") or ""
+            })
         end
     end
-    
-    local payload = HttpService:JSONEncode({scripts = dataToSave})
-    
     executorRequest({
         Url = "https://api.jsonbin.io/v3/b/" .. BIN_ID,
         Method = "PUT",
-        Headers = {
-            ["X-Master-Key"] = API_KEY, 
-            ["Content-Type"] = "application/json"
-        },
-        Body = payload
+        Headers = {["X-Master-Key"] = API_KEY, ["Content-Type"] = "application/json"},
+        Body = HttpService:JSONEncode({scripts = dataToSave})
     })
 end
 
 local function LoadData()
     if not executorRequest then return nil end
-    
     local success, response = pcall(function()
         return executorRequest({
             Url = "https://api.jsonbin.io/v3/b/" .. BIN_ID .. "/latest",
@@ -959,7 +928,6 @@ local function LoadData()
             Headers = {["X-Master-Key"] = API_KEY}
         })
     end)
-    
     if success and response and response.StatusCode == 200 then
         local decoded = HttpService:JSONDecode(response.Body)
         if decoded and decoded.record and decoded.record.scripts then
@@ -969,20 +937,14 @@ local function LoadData()
     return nil
 end
 
--- ==========================================
--- SCRIPT CARD CREATION ENGINE
--- ==========================================
 local function CreateScriptCard(t, id, scriptCode)
-    local scriptCard = Instance.new("Frame")
+    local scriptCard = Instance.new("Frame", savedList)
     scriptCard.Size = UDim2.new(1, -10, 0, 60)
     scriptCard.BackgroundColor3 = Color3.fromRGB(48, 38, 20)
     scriptCard:SetAttribute("SavedScript", scriptCode) 
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = scriptCard
+    Instance.new("UICorner", scriptCard).CornerRadius = UDim.new(0, 8)
 
-    local cardTitle = Instance.new("TextLabel")
+    local cardTitle = Instance.new("TextLabel", scriptCard)
     cardTitle.Name = "TitleLabel"
     cardTitle.Size = UDim2.new(1, -115, 0, 25) 
     cardTitle.Position = UDim2.new(0, 8, 0, 4)
@@ -992,9 +954,8 @@ local function CreateScriptCard(t, id, scriptCode)
     cardTitle.Font = Enum.Font.GothamBold
     cardTitle.TextSize = 14
     cardTitle.TextXAlignment = Enum.TextXAlignment.Left
-    cardTitle.Parent = scriptCard
 
-    local cardId = Instance.new("TextLabel")
+    local cardId = Instance.new("TextLabel", scriptCard)
     cardId.Name = "IdLabel"
     cardId.Size = UDim2.new(1, -115, 0, 20)
     cardId.Position = UDim2.new(0, 8, 0, 30)
@@ -1004,46 +965,32 @@ local function CreateScriptCard(t, id, scriptCode)
     cardId.Font = Enum.Font.Gotham
     cardId.TextSize = 11
     cardId.TextXAlignment = Enum.TextXAlignment.Left
-    cardId.Parent = scriptCard
     
-    local editBtn = Instance.new("TextButton")
-    editBtn.Name = "EditButton"
+    local editBtn = Instance.new("TextButton", scriptCard)
     editBtn.Size = UDim2.new(0, 45, 0, 34)
     editBtn.Position = UDim2.new(1, -100, 0.5, -17)
     editBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 220)
-    editBtn.BorderSizePixel = 0
     editBtn.Text = "EDIT"
     editBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     editBtn.Font = Enum.Font.GothamBold
     editBtn.TextSize = 11
-    editBtn.Parent = scriptCard
+    Instance.new("UICorner", editBtn).CornerRadius = UDim.new(0, 6)
     
-    local editCorner = Instance.new("UICorner")
-    editCorner.CornerRadius = UDim.new(0, 6)
-    editCorner.Parent = editBtn
-    
-    local delBtn = Instance.new("TextButton")
-    delBtn.Name = "DeleteButton"
+    local delBtn = Instance.new("TextButton", scriptCard)
     delBtn.Size = UDim2.new(0, 45, 0, 34)
     delBtn.Position = UDim2.new(1, -50, 0.5, -17)
     delBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-    delBtn.BorderSizePixel = 0
     delBtn.Text = "DEL"
     delBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     delBtn.Font = Enum.Font.GothamBold
     delBtn.TextSize = 11
-    delBtn.Parent = scriptCard
-    
-    local delCorner = Instance.new("UICorner")
-    delCorner.CornerRadius = UDim.new(0, 6)
-    delCorner.Parent = delBtn
+    Instance.new("UICorner", delBtn).CornerRadius = UDim.new(0, 6)
     
     editBtn.Activated:Connect(function()
         currentEditingCard = scriptCard
         titleBox.Text = cardTitle.Text
         idBox.Text = string.gsub(cardId.Text, "Game ID: ", "")
         scriptBox.Text = scriptCard:GetAttribute("SavedScript")
-        
         consoleStartPage.Visible = false
         addScriptPage.Visible = true
         consoleBackBtn.Visible = true
@@ -1053,8 +1000,6 @@ local function CreateScriptCard(t, id, scriptCode)
         scriptCard:Destroy()
         SaveData() 
     end)
-
-    scriptCard.Parent = savedList
 end
 
 plusBtn.Activated:Connect(function()
@@ -1062,7 +1007,6 @@ plusBtn.Activated:Connect(function()
     titleBox.Text = ""
     scriptBox.Text = ""
     idBox.Text = ""
-    
     consoleStartPage.Visible = false
     addScriptPage.Visible = true
     consoleBackBtn.Visible = true
@@ -1092,17 +1036,12 @@ saveBtn.Activated:Connect(function()
     else
         CreateScriptCard(t, id, scriptCode)
     end
-
     SaveData()
-
     addScriptPage.Visible = false
     consoleStartPage.Visible = true
     consoleBackBtn.Visible = false
 end)
 
--- ==========================================
--- COLD RUN INITIALIZATION
--- ==========================================
 local savedData = LoadData()
 if savedData then
     for _, item in pairs(savedData) do
